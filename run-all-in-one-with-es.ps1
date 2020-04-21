@@ -50,19 +50,6 @@ function ReIndex-Dependencies(){
    $index = "jaeger-dependencies-2020-04-13"
    $newIndex = "jaeger-dependencies-$($date.ToString("yyyy-MM-dd"))"
 
-   # Update timestamp in the index
-
-   $body = @{
-      script=@{
-         source="ctx._source.timestamp = '$($date.ToString("s"))Z'";
-         lang="painless"
-      }
-   }
-
-   $json = $body | ConvertTo-Json
-
-   Invoke-WebRequest -Uri "$esServer/$index/_update_by_query?conflicts=proceed" -Method "POST" -Body $json -ContentType "application/json"
-
    # Create new index for current date if one does not exist
 
    Try
@@ -88,7 +75,22 @@ function ReIndex-Dependencies(){
       $json = $body | ConvertTo-Json
 
       Invoke-WebRequest -Uri "$esServer/_reindex" -Method "POST" -Body $json -ContentType "application/json"
+
+      Start-Sleep 5
    }
+
+   # Update timestamp in the index
+
+   $body = @{
+      script=@{
+         source="ctx._source.timestamp = '$($date.ToString("s"))Z'";
+         lang="painless"
+      }
+   }
+
+   $json = $body | ConvertTo-Json
+
+   Invoke-WebRequest -Uri "$esServer/$newIndex/_update_by_query?conflicts=proceed" -Method "POST" -Body $json -ContentType "application/json"
 
    # Remove dependencies indexes except the first one / new one
 

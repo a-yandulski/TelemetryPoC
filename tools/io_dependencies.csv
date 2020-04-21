@@ -36,12 +36,12 @@ page,uses_db,uses_api,api_dependencies
 /nio/client/{id}/viewaddress/{sid},False,True,Monolith.Crm
 /nio/client/{id}/viewclientshares,False,False,
 /nio/client/{id}/viewcontact/{sid},False,False,
-/nio/client/{id}/viewpersonal/{sid},False,True,"Monolith.Crm, Microservice.ApplicationStore"
+/nio/client/{id}/viewpersonal/{sid},False,True,"Microservice.ApplicationStore, Monolith.Crm"
 /nio/client/{id}/viewrelationships/{sid},False,False,
 /nio/client/{id}/viewsummary,False,True,Monolith.Crm
 /nio/client/{id}/viewsummary/{sid},False,True,Monolith.Crm
-/nio/clientactions/addclient,False,True,"Monolith.Crm, Microservice.dpa"
-/nio/clientactions/addclientandplan,False,True,"Monolith.Crm, Microservice.dpa"
+/nio/clientactions/addclient,False,True,"Microservice.dpa, Monolith.Crm"
+/nio/clientactions/addclientandplan,False,True,"Microservice.dpa, Monolith.Crm"
 /nio/clientactions/addclientquick,False,False,
 /nio/clientactions/addclientquicksave,False,True,Monolith.Crm
 /nio/clientactions/{id}/addplan,False,False,
@@ -126,7 +126,7 @@ page,uses_db,uses_api,api_dependencies
 /nio/leads/addlead,False,True,"Microservice.dpa, Monolith.Crm"
 /nio/leads/{id}/addrelationship,False,False,
 /nio/leads/{id}/addrelationship/{sid},False,True,Monolith.Crm
-/nio/leads/{id}/viewlead,False,True,"Monolith.Crm, Microservice.Author"
+/nio/leads/{id}/viewlead,False,True,"Microservice.Author, Monolith.Crm"
 /nio/leads/{id}/viewlead/{sid},False,True,"Microservice.Author, Monolith.Crm"
 /nio/leads/{id}/viewrelationships/{sid},False,False,
 /nio/leadsearch,False,False,
@@ -173,7 +173,7 @@ page,uses_db,uses_api,api_dependencies
 /nio/plan/{id}/listplanvaluationsforclient/{sid},False,False,
 /nio/plan/{id}/notestab/{sid},False,False,
 /nio/plan/{id}/subplanstab/{sid},False,False,
-/nio/plan/{id}/summaryplan/{sid},False,True,"Monolith.Crm, Microservice.Author"
+/nio/plan/{id}/summaryplan/{sid},False,True,"Microservice.Author, Monolith.Crm"
 /nio/plan/{id}/valuationstab/{sid},False,False,
 /nio/plan/{id}/withdrawalstab/{sid},False,False,
 /nio/plan/{id}/withdrawalstab_create/{sid},False,False,
@@ -236,7 +236,7 @@ IntelligentOffice.'Adviser Types',False,False,
 IntelligentOffice.'Adviser Workplace',False,True,Microservice.SecureMessaging
 IntelligentOffice.'Advisers',False,False,
 IntelligentOffice.'Application Support',False,False,
-IntelligentOffice.'Assets & Liabilities',False,True,"Monolith.factfind, Monolith.Portfolio"
+IntelligentOffice.'Assets & Liabilities',False,True,"Monolith.Portfolio, Monolith.factfind"
 IntelligentOffice.'Author',False,False,
 IntelligentOffice.'Auto-Matching',False,False,
 IntelligentOffice.'Automation',False,False,
@@ -327,7 +327,7 @@ IntelligentOffice.'PFP',False,True,Monolith.warehouse
 IntelligentOffice.'Payee Configuration',False,False,
 IntelligentOffice.'Payment Runs',False,False,
 IntelligentOffice.'Plans',False,False,
-"IntelligentOffice.'Plans','Summary'",False,True,"Monolith.Crm, Microservice.Brand, Microservice.PfpConfig"
+"IntelligentOffice.'Plans','Summary'",False,True,"Microservice.Brand, Microservice.PfpConfig, Monolith.Crm"
 IntelligentOffice.'Policy Number',False,False,
 IntelligentOffice.'Portals',False,False,
 IntelligentOffice.'Portfolio Reports',False,False,
