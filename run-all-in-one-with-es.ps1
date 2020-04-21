@@ -2,48 +2,109 @@ $root = $PSScriptRoot
 $esServer = "http://localhost:9200"
 $esUserName = "jaeger"
 $esPassword = "PASSWORD"
-
 $env:SPAN_STORAGE_TYPE="elasticsearch"
 
-Write-Host "Starting Elasticsearch server at $esServer"
+function Start-Elasticsearch(){
 
-Start-Process "$root\elasticsearch\bin\elasticsearch.bat" -WorkingDirectory "$root\elasticsearch\bin\"
+   Write-Host "Starting Elasticsearch server at $esServer"
 
-Start-Sleep 20
+   Start-Process "$root\elasticsearch\bin\elasticsearch.bat" -WorkingDirectory "$root\elasticsearch\bin\"
 
-Write-Host "Starting Jaeger-Collector"
+   Start-Sleep 20
+}
 
-$args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --collector.zipkin.http-port=9411 --es-archive.use-aliases=true --es.use-aliases=true"
+function Start-Collector(){
 
-Start-Process -FilePath "$root\jaeger-collector.exe" -ArgumentList $args -WorkingDirectory "$root"
+   Write-Host "Starting Jaeger-Collector"
 
-Start-Sleep 5
+   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --collector.zipkin.http-port=9411 --es-archive.use-aliases=true --es.use-aliases=true"
 
-Write-Host "Starting Jaeger-Agent"
+   Start-Process -FilePath "$root\jaeger-collector.exe" -ArgumentList $args -WorkingDirectory "$root"
 
-$args = "--reporter.grpc.host-port=localhost:14250"
+   Start-Sleep 5
+}
 
-Start-Process -FilePath "$root\jaeger-agent.exe" -ArgumentList $args -WorkingDirectory "$root"
+function Start-Agent(){
 
-Write-Host "Updating dependencies index"
+   Write-Host "Starting Jaeger-Agent"
 
-$index = "jaeger-dependencies-2020-04-13"
-$date = Get-Date -Format o
-$body = @{
-    script=@{
-       source="ctx._source.timestamp = '$date'";
-       lang="painless"
-    }
- }
+   $args = "--reporter.grpc.host-port=localhost:14250"
 
-$json = $body | ConvertTo-Json
+   Start-Process -FilePath "$root\jaeger-agent.exe" -ArgumentList $args -WorkingDirectory "$root"
+}
 
-Invoke-WebRequest -Uri "$esServer/$index/_update_by_query?conflicts=proceed" -Method "POST" -Body $json -ContentType "application/json"
+function Start-UI(){
 
-Write-Host "Starting Jaeger-Query"
+   Write-Host "Starting Jaeger-Query"
 
-$args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --query.ui-config=$root\ui-config.json --es-archive.use-aliases=true --es.use-aliases=true"
+   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --query.ui-config=$root\ui-config.json --es-archive.use-aliases=true --es.use-aliases=true"
 
-Start-Process -FilePath "$root\jaeger-query.exe" -ArgumentList $args -WorkingDirectory "$root"
+   Start-Process -FilePath "$root\jaeger-query.exe" -ArgumentList $args -WorkingDirectory "$root"
+}
+
+function ReIndex-Dependencies(){
+
+   Write-Host "Re-indexing dependencies"
+
+   $date = [System.DateTime]::UtcNow.Date
+   $index = "jaeger-dependencies-2020-04-13"
+   $newIndex = "jaeger-dependencies-$($date.ToString("yyyy-MM-dd"))"
+
+   # Update timestamp in the index
+
+   $body = @{
+      script=@{
+         source="ctx._source.timestamp = '$($date.ToString("s"))Z'";
+         lang="painless"
+      }
+   }
+
+   $json = $body | ConvertTo-Json
+
+   Invoke-WebRequest -Uri "$esServer/$index/_update_by_query?conflicts=proceed" -Method "POST" -Body $json -ContentType "application/json"
+
+   # Create new index for current date if one does not exist
+
+   Try
+   {
+      $response = Invoke-WebRequest -Uri "$esServer/$newIndex" -Method "HEAD" -ErrorAction Stop
+      $statusCode = $Response.StatusCode
+   }
+   Catch
+   {
+      $statusCode = $_.Exception.Response.StatusCode.value__
+   }
+
+   If ($statusCode -eq "404") {
+      $body = @{
+         source=@{
+            index=$index
+         };
+         dest=@{
+            index=$newIndex
+         }
+      }
+
+      $json = $body | ConvertTo-Json
+
+      Invoke-WebRequest -Uri "$esServer/_reindex" -Method "POST" -Body $json -ContentType "application/json"
+   }
+
+   # Remove dependencies indexes except the first one / new one
+
+   $indices = Invoke-WebRequest -Uri "$esServer/_cat/indices?format=JSON&h=index" -Method "GET" | ConvertFrom-Json
+
+   Foreach ($idx in $indices) {
+      If($idx.Index.StartsWith("jaeger-dependencies-", "CurrentCultureIgnoreCase") -and !($idx.Index -eq $index) -and !($idx.Index -eq $newIndex)) {
+         Invoke-WebRequest -Uri "$esServer/$($idx.Index)" -Method "DELETE"
+      }
+   }
+}
+
+Start-Elasticsearch
+Start-Collector
+Start-Agent
+ReIndex-Dependencies
+Start-UI
 
 Write-Host "All components started"
