@@ -1,6 +1,6 @@
 {
     "dependencies": {
-        "dagMaxNumServices": 500,
+        "dagMaxNumServices": 1000,
         "menuEnabled": true
       }
 }

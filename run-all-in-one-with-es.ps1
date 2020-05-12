@@ -1,10 +1,21 @@
+param(
+    [Switch]$ReIndex,
+    [Switch]$ReadOnly
+)
+
 $root = $PSScriptRoot
 $esServer = "http://localhost:9200"
 $esUserName = "jaeger"
 $esPassword = "PASSWORD"
 $env:SPAN_STORAGE_TYPE="elasticsearch"
+$useAliases = $true
+$depsIndex = "jaeger-dependencies-2020-05-12"
 
 function Start-Elasticsearch(){
+
+   If($ReIndex) {
+      return
+   }
 
    Write-Host "Starting Elasticsearch server at $esServer"
 
@@ -15,9 +26,21 @@ function Start-Elasticsearch(){
 
 function Start-Collector(){
 
+   If($ReIndex) {
+      return
+   }
+
+   If($ReadOnly) {
+      return
+   }
+
    Write-Host "Starting Jaeger-Collector"
 
-   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --collector.zipkin.http-port=9411 --es-archive.use-aliases=true --es.use-aliases=true"
+   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --collector.zipkin.http-port=9411"
+
+   If ($useAliases) {
+      $args += " --es-archive.use-aliases=true --es.use-aliases=true"
+   }
 
    Start-Process -FilePath "$root\jaeger-collector.exe" -ArgumentList $args -WorkingDirectory "$root"
 
@@ -25,6 +48,14 @@ function Start-Collector(){
 }
 
 function Start-Agent(){
+
+   If($ReIndex) {
+      return
+   }
+
+   If($ReadOnly) {
+      return
+   }
 
    Write-Host "Starting Jaeger-Agent"
 
@@ -35,9 +66,17 @@ function Start-Agent(){
 
 function Start-UI(){
 
+   If($ReIndex) {
+      return
+   }
+
    Write-Host "Starting Jaeger-Query"
 
-   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --query.ui-config=$root\ui-config.json --es-archive.use-aliases=true --es.use-aliases=true"
+   $args = "--es.server-urls=$esServer --es.username=$esUserName --es.password=$esPassword --query.ui-config=$root\ui-config.json"
+
+   If ($useAliases) {
+      $args += " --es-archive.use-aliases=true --es.use-aliases=true"
+   }
 
    Start-Process -FilePath "$root\jaeger-query.exe" -ArgumentList $args -WorkingDirectory "$root"
 }
@@ -47,7 +86,7 @@ function ReIndex-Dependencies(){
    Write-Host "Re-indexing dependencies"
 
    $date = [System.DateTime]::UtcNow.Date
-   $index = "jaeger-dependencies-2020-04-13"
+   $index = $depsIndex
    $newIndex = "jaeger-dependencies-$($date.ToString("yyyy-MM-dd"))"
 
    # Create new index for current date if one does not exist
@@ -75,6 +114,16 @@ function ReIndex-Dependencies(){
       $json = $body | ConvertTo-Json
 
       Invoke-WebRequest -Uri "$esServer/_reindex" -Method "POST" -Body $json -ContentType "application/json"
+
+      Try
+      {
+         Invoke-WebRequest -Uri "$esServer/_reindex" -Method "POST" -Body $json -ContentType "application/json" -ErrorAction SilentlyContinue
+      }
+      Catch
+      {
+         Write-Host "Could not re-indexing dependencies."
+         Write-Host $_.Exception.Response
+      }
 
       Start-Sleep 5
    }

@@ -36,7 +36,7 @@ def main(args):
         if len(request_dependencies) > 0:
             request_dependencies.sort()
             api_deps = list(filter(lambda x: x.startswith("Microservice.") or x.startswith("Monolith."), request_dependencies))
-            db_deps = list(filter(lambda x: x.startswith("Sql"), request_dependencies)) #TODO:not yet implemented
+            db_deps = list(filter(lambda x: x.startswith("SQL Server"), request_dependencies))
             request_with_deps["uses_db"] = True if len(db_deps) > 0 else False
             request_with_deps["uses_api"] = True if len(api_deps) > 0 else False
             request_with_deps["api_dependencies"] = separator.join(api_deps)
