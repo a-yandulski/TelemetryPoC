@@ -1,19 +1,27 @@
 param(
-    [Switch]$ReIndex,
-    [Switch]$ReadOnly
+    [String]$root = "",
+    [int]$ReIndex = 0,
+    [int]$ReadOnly = 0
 )
 
-$root = $PSScriptRoot
+Write-Host "root: $root"
+Write-Host "ReIndex: $ReIndex"
+Write-Host "ReadOnly: $ReadOnly"
+
+IF($root -eq ""){
+   $root = $PSScriptRoot
+}
+
 $esServer = "http://localhost:9200"
 $esUserName = "jaeger"
 $esPassword = "PASSWORD"
 $env:SPAN_STORAGE_TYPE="elasticsearch"
 $useAliases = $true
-$depsIndex = "jaeger-dependencies-2020-05-12"
+$depsIndex = "jaeger-dependencies-2020-05-13"
 
 function Start-Elasticsearch(){
 
-   If($ReIndex) {
+   If($ReIndex -eq 1) {
       return
    }
 
@@ -26,11 +34,11 @@ function Start-Elasticsearch(){
 
 function Start-Collector(){
 
-   If($ReIndex) {
+   If($ReIndex -eq 1) {
       return
    }
 
-   If($ReadOnly) {
+   If($ReadOnly -eq 1) {
       return
    }
 
@@ -49,11 +57,11 @@ function Start-Collector(){
 
 function Start-Agent(){
 
-   If($ReIndex) {
+   If($ReIndex -eq 1) {
       return
    }
 
-   If($ReadOnly) {
+   If($ReadOnly -eq 1) {
       return
    }
 
@@ -66,7 +74,7 @@ function Start-Agent(){
 
 function Start-UI(){
 
-   If($ReIndex) {
+   If($ReIndex -eq 1) {
       return
    }
 
